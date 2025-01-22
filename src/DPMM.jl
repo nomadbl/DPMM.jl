@@ -11,12 +11,12 @@ const colorpalette  = RGBA.(palette("Set3", 12))
 import SparseArrays: AbstractSparseMatrix, AbstractSparseVector, nonzeroinds, nonzeros
 
 
-import Distributions: _rand!, partype, AbstractRNG, multiply!, DirichletCanon,
+import Distributions: _rand!, partype, AbstractRNG, DirichletCanon,
                       _logpdf!, rand, pdf, params, _wishart_genA!, var,
                       mean, cov, params, invcov, logdetcov, sqmahal, sqmahal!,
                       partype, unwhiten_winv!,log2π, mvnormal_c0, _logpdf, lgamma,
-                      xlogy, NoArgCheck, suffstats, SufficientStats, GenericMvTDist,
-                      AliasTable, GLOBAL_RNG, ZeroVector
+                      xlogy, suffstats, SufficientStats, GenericMvTDist,
+                      AliasTable
 
 import PDMats: unwhiten!, add!, quad, quad!
 

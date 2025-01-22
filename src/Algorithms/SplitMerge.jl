@@ -87,7 +87,7 @@ function splitmerge_gibbs!(model::AbstractDPModel{V},
 end
 
 logsubcluster_πs(Δ::V, clusters::Dict{Int,<:SplitMergeCluster}) where V<:Real =
-    Dict{Int,Tuple{V,V}}((k,randlogdir(GLOBAL_RNG,V(c.nr)+Δ,V(c.nl)+Δ)) for (k,c) in clusters)
+    Dict{Int,Tuple{V,V}}((k,randlogdir(Random.GLOBAL_RNG,V(c.nr)+Δ,V(c.nl)+Δ)) for (k,c) in clusters)
 
 """
 
@@ -165,7 +165,7 @@ function propose_merges(m::AbstractDPModel{T}, clusters::GenericClusters,
                         X::AbstractMatrix, labels::AbstractVector{Tuple{Int,Bool}},
                         maySplit::Dict{Int,Bool}) where T
     α = m.α
-    cnstnt = -log(α)+lgamma(α)-2*lgamma(0.5*α)-log(100)
+    cnstnt = -log(α)+Distributions.logabsgamma(α)[1]-2*Distributions.logabsgamma(0.5*α)[1]-log(100)
     merge_with = Dict{Int,Int}()
     ckeys = collect(keys(clusters))
     for i=1:length(ckeys)
@@ -180,9 +180,9 @@ function propose_merges(m::AbstractDPModel{T}, clusters::GenericClusters,
             p  = posterior(m,s)
             prior = m.θprior
             logH = cnstnt +
-                lgamma(s.n)-lgamma(s.n+α)+
-            lgamma(s1.n+0.5*α)-lgamma(s1.n) +
-                lgamma(s2.n+0.5*α)-lgamma(s2.n)+
+                Distributions.logabsgamma(s.n)[1]-Distributions.logabsgamma(s.n+α)[1]+
+            Distributions.logabsgamma(s1.n+0.5*α)[1]-Distributions.logabsgamma(s1.n)[1] +
+                Distributions.logabsgamma(s2.n+0.5*α)[1]-Distributions.logabsgamma(s2.n)[1]+
             lmllh(prior,p,s.n)-lmllh(prior,c1.post,s1.n)
             -lmllh(prior,c2.post,s2.n)
             
@@ -205,9 +205,9 @@ function propose_splits!(m::AbstractDPModel, X::AbstractMatrix, labels::Abstract
                 will_split[k] = false
                 continue
             end
-            logH = logα+lgamma(c.nr)+
-                   lgamma(c.nl)-
-                   lgamma(c.n)+
+            logH = logα+Distributions.logabsgamma(c.nr)[1]+
+                   Distributions.logabsgamma(c.nl)[1]-
+                   Distributions.logabsgamma(c.n)[1]+
             c.llhs[2]+c.llhs[3]-c.llhs[1]
             
             will_split[k] = (logH>0 || logH>log(rand()))

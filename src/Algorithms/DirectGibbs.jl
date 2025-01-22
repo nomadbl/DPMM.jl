@@ -67,7 +67,7 @@ function direct_gibbs!(model, X::AbstractMatrix, labels,
         logπs        = logmixture_πs(model.α,clusters) # unnormalized weights
         @inbounds for i=1:size(X,2)
             probs     = ClusterProbs(logπs,clusters,empty_cluster,view(X,:,i)) # chinese restraunt process probabilities
-            znew      = rand(GLOBAL_RNG,AliasTable(probs))  # new label
+            znew      = rand(Random.GLOBAL_RNG,AliasTable(probs))  # new label
             labels[i] = label_x(clusters,znew)
         end
         clusters = DirectClusters(model,X,labels) # TODO handle empty clusters
@@ -109,7 +109,7 @@ function quasi_direct_gibbs!(model, X::AbstractMatrix, labels, clusters::Generic
         record!(scene,labels,t)
         @inbounds for i=1:size(X,2)
             probs     = CRPprobs(model.α,clusters,empty_cluster,X[:,i]) # chinese restraunt process probabilities
-            znew      = rand(GLOBAL_RNG,AliasTable(probs)) # new label
+            znew      = rand(Random.GLOBAL_RNG,AliasTable(probs)) # new label
             labels[i] = label_x(clusters,znew)
         end
         clusters = DirectClusters(model,X,labels) # TODO handle empty clusters
@@ -124,7 +124,7 @@ end
 function direct_parallel!(logπs, X, range, labels, clusters::GenericClusters, empty_cluster)
     for i=1:size(X,2)
         probs      = ClusterProbs(logπs,clusters,empty_cluster,view(X,:,i)) # chinese restraunt process probabilities
-        znew       = rand(GLOBAL_RNG,AliasTable(probs))# new label
+        znew       = rand(Random.GLOBAL_RNG,AliasTable(probs))# new label
         labels[range[i]]  = label_x(clusters,znew)
     end
     return SuffStats(Main._model, X, convert(Array,labels[range]))
@@ -152,7 +152,7 @@ end
 function quasi_direct_parallel!(model, X, range, labels, clusters, empty_cluster)
     for i=1:size(X,2)
         probs      = CRPprobs(model.α, clusters,empty_cluster,view(X,:,i)) # chinese restraunt process probabilities
-        znew       = rand(GLOBAL_RNG,AliasTable(probs)) # new label
+        znew       = rand(Random.GLOBAL_RNG,AliasTable(probs)) # new label
         labels[range[i]] = label_x(clusters,znew)
     end
     return SuffStats(model, X, convert(Array,labels[range]))

@@ -67,7 +67,7 @@ function collapsed_gibbs!(model, X::AbstractMatrix, labels, clusters, empty_clus
             clusters[z] -= x # remove xi's statistics
             isempty(clusters[z]) && delete!(clusters,z)
             probs     = CRPprobs(model.α,clusters,empty_cluster,x) # chinese restraunt process probabilities
-            znew      = rand(GLOBAL_RNG,AliasTable(probs)) # new label
+            znew      = rand(Random.GLOBAL_RNG,AliasTable(probs)) # new label
             labels[i] = place_x!(model,clusters,znew,x)
         end
     end
@@ -117,7 +117,7 @@ function quasi_collapsed_gibbs!(model, X::AbstractMatrix, labels, clusters, empt
         record!(scene,labels,t)
         @inbounds for i=1:size(X,2)
             probs     = CRPprobs(model.α,clusters,empty_cluster, view(X,:,i)) # chinese restraunt process probabilities
-            znew      = rand(GLOBAL_RNG,AliasTable(probs)) # new label
+            znew      = rand(Random.GLOBAL_RNG,AliasTable(probs)) # new label
             labels[i] = label_x(clusters,znew)
         end
         clusters = CollapsedClusters(model,X,labels) # TODO handle empty clusters
@@ -148,7 +148,7 @@ end
 function quasi_collapsed_parallel!(model, X, range, labels, clusters, empty_cluster)
     for i=1:size(X,2)
         probs      = CRPprobs(model.α, clusters,empty_cluster,view(X,:,i)) # chinese restraunt process probabilities
-        znew       = rand(GLOBAL_RNG,AliasTable(probs))# new label
+        znew       = rand(Random.GLOBAL_RNG,AliasTable(probs))# new label
         labels[range[i]]  = label_x(clusters,znew)
     end
     return SuffStats(model,X, convert(Array,labels[range]))

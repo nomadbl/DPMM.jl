@@ -40,13 +40,13 @@ function GridMixture(L::Integer; πs::Vector{T}=ones(L*L)/(L*L)) where T<:Real
     return MixtureModel(vec(comps),πs)
 end
 
-@inline function _rand_with_label!(d::MixtureModel{<:Any,<:Any,<:Any,T},v::AbstractVector{T}) where T<:Real
+@inline function _rand_with_label!(d::MixtureModel{<:Any,<:Any,<:Any,CT},v::AbstractVector{T}) where {T<:Real, CT<:Categorical{T, <:Any}}
     c  = rand(d.prior)
-    _rand!(GLOBAL_RNG,component(d,c),v)
+    _rand!(Random.GLOBAL_RNG, component(d,c),v)
     return c
 end
 
-@inline _rand_with_label!(d::MixtureModel{<:Any,<:Any,<:Any,T},v::AbstractMatrix{T}) where T<:Real =
+@inline _rand_with_label!(d::MixtureModel{<:Any,<:Any,<:Any,CT},v::AbstractMatrix{T}) where {T<:Real, CT<:Categorical{T, <:Any}} =
      [_rand_with_label!(d,col) for col in eachcol(v)]
 
 """
@@ -54,13 +54,13 @@ end
 
 Draw samples from a mixture model. It returns data points and labels as a tuple (X,labels).
 """
-@inline function rand_with_label(d::MixtureModel{<:Any,<:Any,<:Any,T}) where T<:Real
+@inline function rand_with_label(d::MixtureModel{<:Any,<:Any,<:Any,CT}) where {T<:Real, CT<:Categorical{T, <:Any}}
     v = Vector{T}(undef,length(d))
     c = _rand_with_label!(d,v)
     return v,c
 end
 
-@inline function rand_with_label(d::MixtureModel{<:Any,<:Any,<:Any,T},n::Integer) where T<:Real
+@inline function rand_with_label(d::MixtureModel{<:Any,<:Any,<:Any,CT},n::Integer) where {T<:Real, CT<:Categorical{T, <:Any}}
     w = Matrix{T}(undef,length(d),n)
     c = _rand_with_label!(d,w)
     return w,c

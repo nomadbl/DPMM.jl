@@ -47,9 +47,10 @@ function rand(niw::NormalWishart{T,<:Any}) where T
 end
 
 function randWishart(S::AbstractPDMat{T}, df::Real) where T
-    p = dim(S)
+    p = LinearAlgebra.checksquare(S)
     A = zeros(T,p,p)
-    _wishart_genA!(GLOBAL_RNG, p, df, A)
+    # _wishart_genA!(Random.GLOBAL_RNG, p, df, A)
+    _wishart_genA!(Random.GLOBAL_RNG, A, df)
     unwhiten!(S, A)
     A .= A * A'
 end
@@ -63,7 +64,7 @@ end
 
 function mv_lgamma(s::Real, x::Real, D::Int)
     for d=1:D
-        s += lgamma(x+(1-d)/2)
+        s += Distributions.logabsgamma(x+(1-d)/2)[1]
     end
     return s
 end

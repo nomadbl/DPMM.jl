@@ -25,7 +25,7 @@ DirichletFast(α::Vector{<:Integer}) = DirichletFast{Float64}(Float64.(α))
 @inline length(d::DirichletFast) = length(d.α)
 params(d::DirichletFast) = (d.α,)
 @inline partype(d::DirichletFast{T}) where {T<:Real} = T
-#rand(d::DirichletFast) = _rand!(GLOBAL_RNG,d,Array{Float64,1}(undef,length(d.α)))
+#rand(d::DirichletFast) = _rand!(Random.GLOBAL_RNG,d,Array{Float64,1}(undef,length(d.α)))
 
 function _rand!(rng::Random.MersenneTwister, d::DirichletFast{T}, x::AbstractVector) where T
     s = T(0)
@@ -41,8 +41,8 @@ function _rand!(rng::Random.MersenneTwister, d::DirichletFast{T}, x::AbstractVec
     MultinomialFast(x)
 end
 
-@inline rand(d::DirichletCanon) = _rand!(GLOBAL_RNG,d,similar(d.alpha))
-@inline function randlogdir(rng::Random.MersenneTwister, α1::T, α2::T) where T<:Real
+@inline rand(d::DirichletCanon) = _rand!(Random.GLOBAL_RNG,d,similar(d.alpha))
+@inline function randlogdir(rng::Random.AbstractRNG, α1::T, α2::T) where T<:Real
     s1  = rand(rng,Gamma(α1))
     s2  = rand(rng,Gamma(α2))
     lgs = log(s1+s2)
