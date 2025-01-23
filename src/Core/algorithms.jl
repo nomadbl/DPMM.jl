@@ -62,7 +62,7 @@ function setup_workers(ncpu::Integer;seed=31)
         addprocs(ncpu; exeflags="--project=$(dir())") # enable threaded blass
         @everywhere @eval Main using DPMM, SharedArrays, Distributed, Random
         @everywhere Random.seed!($seed)
-        @info "workers: $(Main.Distributed.workers()) initialized"
+        @debug "workers: $(Main.Distributed.workers()) initialized"
     end
 end
 

@@ -65,18 +65,16 @@ Keywords:
 
 - o... : other keyword argument specific to `algorithm`
 """
-function fit(X::AbstractMatrix; algorithm=DEFAULT_ALGO, ncpu=1, T=3000, benchmark=false, scene=nothing, o...)
+function fit(X::AbstractMatrix; algorithm=DEFAULT_ALGO, ncpu=1, T=3000, benchmark::Val{B}=Val(false), scene=nothing, o...) where B
     if ncpu>1
          setup_workers(ncpu)
     end
     algo = algorithm(X; parallel=ncpu>1, o...)
     labels, clusters, cluster0 = initialize_clusters(X,algo)
     tres = @elapsed run!(algo, X, labels, clusters, cluster0; T=T, scene=scene)
-    @info "$tres second passed"
+    @debug "$tres second passed"
     labels = first.(labels) # not return subclusters
-    if benchmark
-        return labels, tres
-    end
+    B && return labels, tres
     return labels
 end
 export fit
