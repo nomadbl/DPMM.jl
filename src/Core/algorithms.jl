@@ -58,7 +58,7 @@ Setup parallel process, initialize required modules
 """
 function setup_workers(ncpu::Integer;seed=31)
     if nworkers() != ncpu
-        @warn("setting up parallel processes, takes a while for once!")
+        @debug("DPMM.jl setting up parallel processes")
         addprocs(ncpu; exeflags="--project=$(dir())") # enable threaded blass
         @everywhere @eval Main using DPMM, SharedArrays, Distributed, Random
         @everywhere Random.seed!($seed)
