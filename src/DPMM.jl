@@ -65,7 +65,7 @@ Keywords:
 
 - o... : other keyword argument specific to `algorithm`
 """
-function fit(X::AbstractMatrix; algorithm=DEFAULT_ALGO, ncpu=1, T=3000, benchmark::Val{B}=Val(false), scene=nothing, o...) where B
+function fit(X::AbstractMatrix; algorithm::DPMMAlgorithm=DEFAULT_ALGO, ncpu=1, T=3000, benchmark::Val{B}=Val(false), scene=nothing, o...) where B
     if ncpu>1
          setup_workers(ncpu)
     end
