@@ -82,8 +82,7 @@ function initialize_clusters(X::AbstractMatrix, algo::DPMMAlgorithm{P}) where P
         @everywhere ws _model    = $(algo.model)
         @everywhere ws _cluster0 = $cluster0
         @sync for (i,p) in enumerate(procs(labels))
-            xworker = X[:,range_1dim(labels,i)]
-            ref = @spawnat(p, Core.eval(Main, Expr(:(=), :_X, xworker)))
+            ref = @spawnat(p, Core.eval(Main, Expr(:(=), :_X, X[:,localindices(labels)])))
         end
     end
     return labels, clusters, cluster0
