@@ -65,7 +65,7 @@ function direct_gibbs!(model, X::AbstractMatrix, labels,
     for t in 1:T
         record!(scene,labels,t)
         logπs        = logmixture_πs(model.α,clusters) # unnormalized weights
-        @inbounds for i=1:size(X,2)
+        @inbounds for i=axes(X,2)
             probs     = ClusterProbs(logπs,clusters,empty_cluster,view(X,:,i)) # chinese restraunt process probabilities
             znew      = rand(Random.GLOBAL_RNG,AliasTable(probs))  # new label
             labels[i] = label_x(clusters,znew)
@@ -107,7 +107,7 @@ end
 function quasi_direct_gibbs!(model, X::AbstractMatrix, labels, clusters::GenericClusters, empty_cluster;T=10, scene=nothing)
     for t in 1:T
         record!(scene,labels,t)
-        @inbounds for i=1:size(X,2)
+        @inbounds for i=axes(X,2)
             probs     = CRPprobs(model.α,clusters,empty_cluster,X[:,i]) # chinese restraunt process probabilities
             znew      = rand(Random.GLOBAL_RNG,AliasTable(probs)) # new label
             labels[i] = label_x(clusters,znew)

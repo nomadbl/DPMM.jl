@@ -68,7 +68,7 @@ function splitmerge_gibbs!(model::AbstractDPModel{V},
         #record!(scene,labels,t)
         logπs  = logmixture_πs(model.α,clusters)
         logsπs = logsubcluster_πs(model.α/2,clusters)
-        @inbounds for i=1:length(labels)
+        @inbounds for i=axes(labels,1)
             x = X[:,i]
             probs = RestrictedClusterProbs(logπs,clusters,x)
             z  = label_x2(clusters,rand(AliasTable(probs)))
@@ -328,7 +328,7 @@ end
 ###
 
 function splitmerge_parallel!(logπs, logsπs, X::AbstractMatrix, range::AbstractRange, labels, clusters)
-    @inbounds for i=1:length(range)
+    @inbounds for i=eachindex(range)
         x = X[:,i]
         probs = RestrictedClusterProbs(logπs,clusters,x)
         z  = label_x2(clusters,rand(AliasTable(probs)))

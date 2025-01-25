@@ -62,7 +62,7 @@ empty_cluster(algo::CollapsedAlgorithm) = CollapsedCluster(algo.model,Val(true))
 function collapsed_gibbs!(model, X::AbstractMatrix, labels, clusters, empty_cluster;T=10, scene=nothing)
     for t in 1:T
         record!(scene,labels,t)
-        @inbounds for i=1:size(X,2)
+        @inbounds for i=axes(X,2)
             x, z = X[:,i], labels[i]
             clusters[z] -= x # remove xi's statistics
             isempty(clusters[z]) && delete!(clusters,z)
@@ -115,7 +115,7 @@ end
 function quasi_collapsed_gibbs!(model, X::AbstractMatrix, labels, clusters, empty_cluster;T=10, scene=nothing)
     for t in 1:T
         record!(scene,labels,t)
-        @inbounds for i=1:size(X,2)
+        @inbounds for i=axes(X,2)
             probs     = CRPprobs(model.α,clusters,empty_cluster, view(X,:,i)) # chinese restraunt process probabilities
             znew      = rand(Random.GLOBAL_RNG,AliasTable(probs)) # new label
             labels[i] = label_x(clusters,znew)
