@@ -1,7 +1,7 @@
 module DPMM
 using Distributions, ColorBrewer, Colors, Distributed, SharedArrays, SparseArrays, LinearAlgebra, PDMats, Random #Makie
 
-import Base: length, convert, size, *, +, -, getindex, sum, length, rand, @propagate_inbounds
+import Base: length, convert, size, *, +, -, isempty, getindex, sum, length, rand, @propagate_inbounds
 
 const colorpalette  = RGBA.(palette("Set3", 12))
 
@@ -40,6 +40,47 @@ include("Clusters/SplitMergeCluster.jl"); export SplitMergeCluster, SplitMergeCl
 include("Algorithms/CollapsedGibbs.jl"); export  CollapsedAlgorithm
 include("Algorithms/DirectGibbs.jl"); export DirectAlgorithm
 include("Algorithms/SplitMerge.jl"); export SplitMergeAlgorithm
+
+"""
+    AbstractCluster
+
+Abstract type for clusters
+
+Each subtype should provide the following methods:
+- `population(c)`: population of the cluster
+- `isempty(m::AbstractCluster)`: checks whether the cluster is empty?
+- `logαpdf(c,x)` : log(∝likelihood) of a data point
+- `lognαpdf(c,x)`: log(population) + logαpdf(c,x) for a data point (used in CRP calculations)
+- `ClusterType(m::AbstractDPModel,X::AbstractArray)`  : constructor (X is the data as columns)
+- `ClusterType(m::AbstractDPModel,s::SufficientStats)`: constructor
+
+Other generic functions are implemented on top of these core functions.
+"""
+abstract type AbstractCluster end
+const GenericClusters = Dict{Int, <:AbstractCluster}
+
+"""
+    population(m::AbstractCluster)
+
+Number of data points in a cluster
+"""
+population(m::AbstractCluster)
+
+"""
+    logαpdf(m::AbstractCluster,x::AbstractArray)
+
+log(∝likelihood) of a data point given by a cluster.
+"""
+logαpdf(m::AbstractCluster,x::AbstractArray)
+
+@inline isempty(m::AbstractCluster)    = population(m)==0
+
+"""
+    lognαpdf(m::AbstractCluster,x::AbstractArray)
+
+log(population) + log(∝likelihood) of a data point given by a cluster.
+"""
+@inline lognαpdf(m::AbstractCluster,x) = log(population(m)) + logαpdf(m,x)
 
 """
     fit(X::AbstractMatrix; algorithm=DEFAULT_ALGO, ncpu=1, T=3000, benchmark=false, scene=nothing, o...)
