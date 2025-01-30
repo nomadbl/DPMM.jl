@@ -3,21 +3,35 @@
 MCMC Chain type for storing sampled clusters during the MCMC simulation, representing
 samples x vals x chains, but allowing for varying number of parameters along the chain to
 account for varying number of clusters during DPMM sampling.
+
+
+`DPMMChain(algorithm::Type{<:DPMMAlgorithm}, X::AbstractMatrix; o...)`
+
+
+Examples:
+
+`DPMMChain(SplitMergeAlgorithm, rand(2, 100); model_type=DPMM.DPGMM)`
+`DPMMChain(SplitMergeAlgorithm, rand(10, 100); model_type=DPMM.DPMNMM)`
 """
-struct DPMMChain{T,CT<:AbstractCluster, IT<:AbstractVector{<:Integer}, A<:AbstractVector{<:AbstractVector{<:AbstractVector{CT}}},K<:NamedTuple,I<:NamedTuple} <: AbstractMCMC.AbstractChains
+struct DPMMChain{CT<:AbstractCluster, IT<:AbstractVector{<:Integer}, A<:AbstractVector{<:AbstractVector{<:AbstractVector{CT}}},K<:NamedTuple,I<:NamedTuple} <: AbstractMCMC.AbstractChains
     value::A # Vector{Vector{Vector{clusters}}} <=> chains[samples[clusters[]]]
     iters::IT
     name_map::K
     info::I
 end
-DPMMChain(t::Type{<:AbstractCluster}) = DPMMChain(Vector{t}(), Int64[], nothing, nothing)
-
+emptychain(t::Type{<:AbstractCluster}) = Vector{Vector{t}}[Vector{Vector{t}}(),]
+DPMMChain(t::Type{<:AbstractCluster}) = DPMMChain{t, Vector{Int64}, Vector{Vector{Vector{t}}}, NamedTuple{}, NamedTuple{}}(emptychain(t), Int64[], NamedTuple(), NamedTuple())
+function DPMMChain(algorithm::Type{<:DPMMAlgorithm}, X::AbstractMatrix; o...)
+    algo = algorithm(X; o...)
+    labels, clusters, cluster0 = initialize_clusters(X,algo)
+    DPMMChain(eltype(values(clusters)))
+end
 """
     names(chains::DPMMChain)
 
 Return the parameter names in the `chains`.
 """
-Base.names(chains::DPMMChain{T,CT}) where {T, CT<:AbstractCluster} = fieldnames(CT)
+Base.names(chains::DPMMChain{CT}) where {CT<:AbstractCluster} = fieldnames(CT)
 
 """
     names(chains::Chains, section::Symbol)
@@ -45,7 +59,7 @@ Base.length(c::DPMMChain) = size(c, 1) * size(c,3)
 Base.first(c::DPMMChain) = first(c.iters)
 Base.last(c::DPMMChain) = last(c.iters)
 Base.step(c::DPMMChain) = last(c)
-function AbstractMCMC.chainscat(c::DPMMChain{T,CT}, cs::DPMMChain{T,CT}...; dims=3) where {T,CT<:AbstractCluster}
+function AbstractMCMC.chainscat(c::DPMMChain{CT}, cs::DPMMChain{CT}...; dims=3) where {CT<:AbstractCluster}
     # add a chain
     if dims == 3
         _cat(Val(3), c, cs...)
@@ -57,7 +71,7 @@ function AbstractMCMC.chainscat(c::DPMMChain{T,CT}, cs::DPMMChain{T,CT}...; dims
         throw(ArgumentError("chainscat: got dims==2, DPMMChain cannot be concatenated along parameter dimensions."))
     end
 end
-function _cat(::Val{1}, c1::DPMMChain{T,CT}, cs::DPMMChain{T,CT}...) where {T,CT<:AbstractCluster}
+function _cat(::Val{1}, c1::DPMMChain{CT}, cs::DPMMChain{CT}...) where {CT<:AbstractCluster}
     # check inputs
     lastiter = last(c1)
     for c in cs
@@ -78,7 +92,7 @@ function _cat(::Val{1}, c1::DPMMChain{T,CT}, cs::DPMMChain{T,CT}...) where {T,CT
     value = [vcat(c1.value[chnindex], [c.value[chnindex] for c in cs]...) for chnindex in eachindex(c1.value)]
     return DPMMChain(value, iters, c1.name_map, c1.info)
 end
-function _cat(::Val{3}, c1::DPMMChain{T,CT}, cs::DPMMChain{T,CT}...) where {T,CT<:AbstractCluster}
+function _cat(::Val{3}, c1::DPMMChain{CT}, cs::DPMMChain{CT}...) where {CT<:AbstractCluster}
     # check inputs
     rng = c1.iters
     all(c -> c.iters == rng, cs) || throw(ArgumentError("chain sample indices differ"))

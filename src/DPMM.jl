@@ -139,37 +139,29 @@ Keywords:
 - o... : other keyword argument specific to `algorithm`
 """
 function fit(algorithm::Type{<:DPMMAlgorithm}, X::AbstractMatrix; ncpu=1, T=3000, benchmark::Val{B}=Val(false),
-             scene=nothing, chain::Union{Bool, DPMMChain{ET, CT}}=false, o...) where {B, ET, CT}
+             scene=nothing, chain::Union{Nothing, DPMMChain{CT}}=nothing, o...) where {B, CT}
     if ncpu>1
          setup_workers(ncpu)
     end
     algo = algorithm(X; parallel=ncpu>1, o...)
     labels, clusters, cluster0 = initialize_clusters(X,algo)
-    mcmc_chain = if chain == true
-        DPMMChain(typeof(cluster0))
-    elseif chain isa DPMMChain
-        @assert typeof(cluster0) == CT "DPMMChain cluster type $CT does not match algorithm cluster type $(typeof(cluster0))"
-        chain
-    else
-        false
+    if chain isa DPMMChain
+        @assert eltype(values(clusters)) == CT "DPMMChain cluster type $CT does not match algorithm cluster type $(eltype(values(clusters)))"
     end
-    tres = @elapsed run!(algo, X, labels, clusters, cluster0; T=T, scene=scene, chain=mcmc_chain)
+    tres = @elapsed run!(algo, X, labels, clusters, cluster0; T=T, scene=scene, chain=chain)
     @debug "$tres second passed"
     labels = first.(labels) # not return subclusters
     B && return labels, tres
     return labels
 end
 
-function chain_append!(chain::DPMMChain{T,CT}, samples::AbstractVector{AbstractVector{CT}}) where {T, CT<:AbstractCluster}
+function chain_append!(chain::DPMMChain{CT}, samples::Dict{<:Integer, CT}) where {CT<:AbstractCluster}
     nsamples, _, nchains = size(chain)
-    @assert nchains == length(samples) "cannot append $(length(samples)) chains to DPMMChain containing $nchains chains"
-    for chnind in eachindex(chain.value)
-      push!(chain.value[chnind], samples[chnind])
-    end
-    itr = isempty(chain.iter) ? 1 : last(chain.iter)+1
-    push!(chain.iter, itr)
+    @assert nchains == 1 "cannot append to multichain DPMMChain. Create new single chain and concatenate chains."
+    push!(chain.value[end], collect(values(samples)))
+    itr = isempty(chain.iters) ? 1 : last(chain.iters)+1
+    push!(chain.iters, itr)
 end
-chain_append!(chain::Bool,z) = nothing
 chain_append!(chain::Nothing,z) = nothing
 
 export fit
