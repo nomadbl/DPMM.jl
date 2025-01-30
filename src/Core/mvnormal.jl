@@ -23,7 +23,7 @@ MvNormalFast(μ::AbstractVector, J::AbstractPDMat) =
     MvNormalFast(μ,J,mvnormal_c0(μ,J))
 
 MvNormalFast(J::Cov) where {T, Cov<:AbstractPDMat{T}} = 
-    MvNormalFast(ZeroVector(T, dim(J)), J)
+    MvNormalFast(zeros(T, dim(J)), J)
 
 MvNormalFast(J::Matrix{<:Real}) = MvNormalFast(PDMat(J))
 
