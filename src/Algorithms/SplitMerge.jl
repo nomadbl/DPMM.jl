@@ -69,8 +69,8 @@ function splitmerge_gibbs!(model::AbstractDPModel{V},
         logsπs = logsubcluster_πs(model.α/2,clusters)
         @inbounds for i=axes(labels,1)
             x = X[:,i]
-            probs = RestrictedClusterProbs(logπs,clusters,x)
-            z  = label_x2(clusters,rand(AliasTable(probs)))
+            probs = restricted_cluster_probs(logπs,clusters,x)
+            z  = label_x2(clusters, rand(AliasTable(probs)))
             labels[i] = (z, sample_sub_cluster(logsπs[z],clusters[z],x))
         end
         update_clusters!(model,X,clusters,labels)
@@ -92,11 +92,11 @@ logsubcluster_πs(Δ::V, clusters::Dict{Int,<:SplitMergeCluster}) where V<:Real 
 
 """
 
-    RestrictedClusterProbs(πs::AbstractVector{V}, clusters::Dict,  x::AbstractVector) where V<:Real
+    restricted_cluster_probs(logπs::AbstractVector{V}, clusters::Dict,  x::AbstractVector) where V<:Real
     
 Returns normalized probability vector for a data point being any cluster
     """
-function RestrictedClusterProbs(logπs::AbstractVector{V}, clusters::GenericClusters,
+function restricted_cluster_probs(logπs::AbstractVector{V}, clusters::GenericClusters,
                                 x::AbstractVector) where V<:Real
     p = Vector{V}(undef,length(clusters))
     max = typemin(V)
@@ -331,8 +331,8 @@ end
 function splitmerge_parallel!(logπs, logsπs, X::AbstractMatrix, range::AbstractRange, labels, clusters)
     @inbounds for i=eachindex(range)
         x = X[:,i]
-        probs = RestrictedClusterProbs(logπs,clusters,x)
-        z  = label_x2(clusters,rand(AliasTable(probs)))
+        probs = restricted_cluster_probs(logπs, clusters,x)
+        z  = label_x2(clusters, rand(AliasTable(probs)))
         labels[range[i]] = (z, sample_sub_cluster(logsπs[z],clusters[z],x))
     end
     return SuffStats(Main._model, X, convert(Array,labels[range]))
