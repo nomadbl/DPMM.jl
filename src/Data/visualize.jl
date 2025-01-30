@@ -15,5 +15,6 @@
 #     return Main.scene
 # end
 #  this code was moved to extension MakieExt
+function draw_gaussian_2d! end
 setup_scene(x::Nothing) = nothing
 record!(scene::Nothing, o...) = nothing
