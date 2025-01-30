@@ -42,11 +42,15 @@ function _rand!(rng::Random.MersenneTwister, d::DirichletFast{T}, x::AbstractVec
 end
 
 @inline rand(d::DirichletCanon) = _rand!(Random.GLOBAL_RNG,d,similar(d.alpha))
+# @inline function randlogdir(rng::Random.AbstractRNG, α1::T, α2::T) where T<:Real
+#     s1  = rand(rng,Gamma(α1))
+#     s2  = rand(rng,Gamma(α2))
+#     lgs = log(s1+s2)
+#     return (log(s1)-lgs,log(s2)-lgs)
+# end
 @inline function randlogdir(rng::Random.AbstractRNG, α1::T, α2::T) where T<:Real
-    s1  = rand(rng,Gamma(α1))
-    s2  = rand(rng,Gamma(α2))
-    lgs = log(s1+s2)
-    return (log(s1)-lgs,log(s2)-lgs)
+    x = rand(rng,Beta(α1,α2))
+    return (log(x),log(1-x))
 end
 
 
