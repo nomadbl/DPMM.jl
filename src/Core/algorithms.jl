@@ -57,7 +57,7 @@ run!(algo::DPMMAlgorithm,X,args...;o...)
 Setup parallel process, initialize required modules
 """
 function setup_workers(ncpu::Integer;seed=31)
-    if nworkers() != ncpu
+    if nworkers() < ncpu
         @debug("DPMM.jl setting up parallel processes")
         addprocs(ncpu; exeflags="--project=$(dir())") # enable threaded blass
         @everywhere @eval Main using DPMM, SharedArrays, Distributed, Random
