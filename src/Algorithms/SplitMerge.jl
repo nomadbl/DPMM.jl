@@ -71,7 +71,7 @@ function splitmerge_gibbs!(model::AbstractDPModel{V},
             x = X[:,i]
             probs = RestrictedClusterProbs(logπs,clusters,x)
             z  = label_x2(clusters,rand(AliasTable(probs)))
-            labels[i] = (z,SampleSubCluster(logsπs[z],clusters[z],x))
+            labels[i] = (z, sample_sub_cluster(logsπs[z],clusters[z],x))
         end
         update_clusters!(model,X,clusters,labels)
         will_split = propose_splits!(model, X, labels, clusters, maybe_split)
@@ -133,11 +133,11 @@ function maybeSplit(clusters::Dict{Int,<:SplitMergeCluster}, maybe_split::Dict{I
 end
 
 """
-     SampleSubCluster(πs::Vector{V}, cluster::SplitMergeCluster, x::AbstractVector) where V<:Real
+     sample_sub_cluster(logπs::Vector{V}, cluster::SplitMergeCluster, x::AbstractVector) where V<:Real
 
 Returns normalized probability vector for a data point being right or left subcluster
 """
-function SampleSubCluster(logπs::Tuple{V,V}, cluster::SplitMergeCluster,
+function sample_sub_cluster(logπs::Tuple{V,V}, cluster::SplitMergeCluster,
                           x::AbstractVector) where V<:Real
     p1 = first(logπs) + logαpdf(cluster,x,Val(false))
     p2 = last(logπs)  + logαpdf(cluster,x,Val(true))
@@ -333,7 +333,7 @@ function splitmerge_parallel!(logπs, logsπs, X::AbstractMatrix, range::Abstrac
         x = X[:,i]
         probs = RestrictedClusterProbs(logπs,clusters,x)
         z  = label_x2(clusters,rand(AliasTable(probs)))
-        labels[range[i]] = (z,SampleSubCluster(logsπs[z],clusters[z],x))
+        labels[range[i]] = (z, sample_sub_cluster(logsπs[z],clusters[z],x))
     end
     return SuffStats(Main._model, X, convert(Array,labels[range]))
 end
