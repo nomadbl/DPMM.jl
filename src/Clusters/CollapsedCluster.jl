@@ -61,6 +61,7 @@ end
 @inline +(c::CollapsedCluster{V,P},x::AbstractVector) where {V<:Distribution,P<:Distribution} =
     CollapsedCluster{V,P}(c.n+1, update_predictive(c.prior,c.predictive,x,c.n), c.prior)
 
+@inline posterior_predictive(m::CollapsedCluster) = m.predictive
 @inline logαpdf(m::CollapsedCluster,x)  = logαpdf(m.predictive,x)
 
 CollapsedClusters(model::AbstractDPModel, X::AbstractMatrix, z::AbstractArray{Int}) =

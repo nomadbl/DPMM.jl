@@ -48,6 +48,7 @@ end
     DirectCluster(floor(Int,m.α),rand(m.θprior),m.θprior)
 
 @inline logαpdf(m::DirectCluster,x)  = logαpdf(m.sampled,x)
+@inline posterior_predictive(m::DirectCluster) = m.sampled
 
 DirectClusters(model::AbstractDPModel, X::AbstractMatrix, z::AbstractArray{Int}) =
     Dict((k,DirectCluster(model,X[:,findall(l->l==k,z)])) for k in unique(z))

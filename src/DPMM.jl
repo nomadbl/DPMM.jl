@@ -32,6 +32,7 @@ Abstract type for clusters
 Each subtype should provide the following methods:
 - `population(c)`: population of the cluster
 - `isempty(m::AbstractCluster)`: checks whether the cluster is empty?
+- `posterior_predictive(c)` : posterior predictive distribution for new data
 - `logαpdf(c,x)` : log(∝likelihood) of a data point
 - `lognαpdf(c,x)`: log(population) + logαpdf(c,x) for a data point (used in CRP calculations)
 - `ClusterType(m::AbstractDPModel,X::AbstractArray)`  : constructor (X is the data as columns)
@@ -48,6 +49,13 @@ const GenericClusters = Dict{Int, <:AbstractCluster}
 Number of data points in a cluster
 """
 population(m::AbstractCluster)
+
+"""
+    posterior_predictive(m::AbstractCluster)
+
+posterior predictive distribution for new data in a cluster.
+"""
+posterior_predictive(m::AbstractCluster)
 
 """
     logαpdf(m::AbstractCluster,x::AbstractArray)
@@ -111,6 +119,7 @@ include("Models/dpmnmm.jl"); export DPMNMM, DPMNMMStats
 include("Clusters/CollapsedCluster.jl"); export CollapsedCluster, CollapsedClusters
 include("Clusters/DirectCluster.jl"); export DirectCluster, DirectClusters
 include("Clusters/SplitMergeCluster.jl"); export SplitMergeCluster, SplitMergeClusters
+export posterior_predictive
 include("Algorithms/CollapsedGibbs.jl"); export  CollapsedAlgorithm
 include("Algorithms/DirectGibbs.jl"); export DirectAlgorithm
 include("Algorithms/SplitMerge.jl"); export SplitMergeAlgorithm
