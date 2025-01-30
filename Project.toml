@@ -24,6 +24,9 @@ TimerOutputs = "a759f4b9-e2f1-59dc-863e-4aeb61b1ea8f"
 [weakdeps]
 Makie = "ee78f7c6-11fb-53f2-987a-cfe4a2b5a57a"
 
+[extensions]
+MakieExt = "Makie"
+
 [compat]
 AbstractMCMC = "5.6.0"
 MCMCChains = "6.0.7"
