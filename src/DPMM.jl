@@ -65,6 +65,35 @@ log(population) + log(∝likelihood) of a data point given by a cluster.
 """
 @inline lognαpdf(m::AbstractCluster,x) = log(population(m)) + logαpdf(m,x)
 
+"""
+    var_of_information(c1::AbstractVector{CT}, c2::AbstractVector{CT}, x::AbstractMatrix)
+
+
+Variation of information between two clusterings, `c1` and `c2`, calculated on the dataset `x`.
+This function generalizes variation of information introduced in [Meilă, Comparing clusterings—an information based distance](https://doi.org/10.1016/j.jmva.2006.11.013.).
+Instead of merely counting the number of points in each cluster to estimate the probability `p(k)` for a cluster assignment, we directly marginalize over the data likelihood for each cluster.
+That is, `p(k)=E_x p(x,k)` and the joint clustering probabilities `p(k,k')=E_x p(x,k)p(x,k')`.
+The rest of the implementation is standard.
+
+`x` should be `D` by `N` for `D` dimensions and `N` data points.
+"""
+function var_of_information(cs1::AbstractVector{CT}, cs2::AbstractVector{CT}, x::AbstractMatrix) where CT<:AbstractCluster
+    clstr_p1 = similar(cs2, eltype(x), length(cs1))
+    clstr_p2 = similar(cs2, eltype(x), length(cs2))
+    clstr_p_joint = similar(cs2, eltype(x), length(cs1), length(cs2))
+
+    # compute clustering probabilities
+    @inline likelihoods(c, y) = mapslices(dp -> exp(logαpdf(c, dp)), y; dims=1)
+    @inline likelihoods(c1, c2, y) = mapslices(dp -> exp(logαpdf(c1, dp)+logαpdf(c2, dp)), y; dims=1)
+    for k2 in eachindex(cs2)
+      clstr_p2[k2] = mean(likelihoods(cs2[k2], x))
+      for k1 in eachindex(cs1)
+        clstr_p1[k1] = mean(likelihoods(cs1[k1], x))
+        clstr_p_joint[k1,k2] = mean(likelihoods(c1[k1], c2[k2], x))
+      end
+    end
+    return entropy(clstr_p1) + entropy(clstr_p2) - 2 * kldivergence(clstr_p_joint, clstr_p1 * clstr_p2')
+end
 
 include("Core/linearalgebra.jl")
 include("Core/mvnormal.jl"); export MvNormalFast
