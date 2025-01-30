@@ -7,7 +7,7 @@
 
 Run it by:
 ```julia
-labels = fit(X; algorithm = SplitMergeAlgorithm, quasi=false, ncpu=1, T=1000, keywords...)
+labels = fit(SplitMergeAlgorithm, X; quasi=false, ncpu=1, T=1000, keywords...)
 ```
 
 `P` stands for parallel, `Q` stands for quasi.
@@ -62,10 +62,9 @@ function splitmerge_gibbs!(model::AbstractDPModel{V},
                            X::AbstractMatrix,
                            labels::AbstractVector,
                            clusters::Dict{Int,<:SplitMergeCluster},
-                           cluster0; merge::Bool=true, T=10, scene=nothing) where V<:Real
+                           cluster0; merge::Bool=true, T=10, scene=nothing, chain=false) where V<:Real
     maybe_split = maybeSplit(clusters)
     for t in 1:T
-        #record!(scene,labels,t)
         logπs  = logmixture_πs(model.α,clusters)
         logsπs = logsubcluster_πs(model.α/2,clusters)
         @inbounds for i=axes(labels,1)
@@ -83,7 +82,9 @@ function splitmerge_gibbs!(model::AbstractDPModel{V},
             materialize_merges!(model, labels, clusters, will_merge)
         end
         maybeSplit(clusters,maybe_split)
+        chain_append!(chain, clusters)
     end
+    record!(scene,labels,T)
 end
 
 logsubcluster_πs(Δ::V, clusters::Dict{Int,<:SplitMergeCluster}) where V<:Real =
@@ -353,11 +354,10 @@ function update_clusters!(m::AbstractDPModel, clusters::Dict, stats::Dict{Int,<:
     return clusters
 end
 
-function splitmerge_gibbs_parallel!(model, X::AbstractMatrix, labels::SharedArray, clusters, empty_cluster; merge=true, T=10, scene=nothing)
+function splitmerge_gibbs_parallel!(model, X::AbstractMatrix, labels::SharedArray, clusters, empty_cluster; merge=true, T=10, scene=nothing, chain=false)
     maybe_split = maybeSplit(clusters)
     stats = Vector{Dict{Int,Tuple{stattype(model),stattype(model)}}}(undef,length(procs(labels)))
     @inbounds for t in 1:T
-        #record!(scene,labels,t)
         logπs   = logmixture_πs(model.α,clusters)
         logsπs  = logsubcluster_πs(model.α/2,clusters)
         @sync begin
@@ -374,7 +374,9 @@ function splitmerge_gibbs_parallel!(model, X::AbstractMatrix, labels::SharedArra
             materialize_merges!(model, labels, clusters, will_merge)
         end
         maybeSplit(clusters, maybe_split)
+        chain_append!(chain, clusters)
     end
+    record!(scene,labels,T)
 end
 
 #Gathers parallely collected sufficient stats

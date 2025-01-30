@@ -7,7 +7,7 @@
 
 Run it by:
 ```julia
-labels = fit(X; algorithm = CollapsedAlgorithm, quasi=false, ncpu=1, T=1000, keywords...)
+labels = fit(CollapsedAlgorithm, X; quasi=false, ncpu=1, T=1000, keywords...)
 ```
 
 `P` stands for parallel, `Q` stands for quasi.
@@ -59,9 +59,8 @@ empty_cluster(algo::CollapsedAlgorithm) = CollapsedCluster(algo.model,Val(true))
 ###
 
 #Serial Collapsed Gibbs Algorithm
-function collapsed_gibbs!(model, X::AbstractMatrix, labels, clusters, empty_cluster;T=10, scene=nothing)
+function collapsed_gibbs!(model, X::AbstractMatrix, labels, clusters, empty_cluster;T=10, scene=nothing, chain=false)
     for t in 1:T
-        record!(scene,labels,t)
         @inbounds for i=axes(X,2)
             x, z = X[:,i], labels[i]
             clusters[z] -= x # remove xi's statistics
@@ -70,7 +69,9 @@ function collapsed_gibbs!(model, X::AbstractMatrix, labels, clusters, empty_clus
             znew      = rand(Random.GLOBAL_RNG,AliasTable(probs)) # new label
             labels[i] = place_x!(model,clusters,znew,x)
         end
+        chain_append!(chain, clusters)
     end
+    record!(scene,labels,T)
 end
 
 """
@@ -112,16 +113,17 @@ function place_x!(model::AbstractDPModel,clusters::Dict{Int,<:AbstractCluster},k
 end
 
 #Serial Quasi-Collapsed Gibbs Algorithm
-function quasi_collapsed_gibbs!(model, X::AbstractMatrix, labels, clusters, empty_cluster;T=10, scene=nothing)
+function quasi_collapsed_gibbs!(model, X::AbstractMatrix, labels, clusters, empty_cluster;T=10, scene=nothing, chain=false)
     for t in 1:T
-        record!(scene,labels,t)
         @inbounds for i=axes(X,2)
             probs     = CRPprobs(model.α,clusters,empty_cluster, view(X,:,i)) # chinese restraunt process probabilities
             znew      = rand(Random.GLOBAL_RNG,AliasTable(probs)) # new label
             labels[i] = label_x(clusters,znew)
         end
         clusters = CollapsedClusters(model,X,labels) # TODO handle empty clusters
+        chain_append!(chain, clusters)
     end
+    record!(scene,labels,T)
 end
 
 
@@ -158,9 +160,8 @@ end
     quasi_collapsed_parallel!(Main._model,Main._X,localindices(labels),labels,clusters,Main._cluster0)
 
 #Parallel Quasi-Collapsed Gibbs Algorithm
-function quasi_collapsed_gibbs_parallel!(model, X, labels, clusters, empty_cluster; scene=nothing, T=10)
+function quasi_collapsed_gibbs_parallel!(model, X, labels, clusters, empty_cluster; scene=nothing, T=10, chain=false)
     for t=1:T
-        record!(scene,labels,t)
         stats = Dict{Int,<:SufficientStats}[]
         @sync begin
             for p in procs(labels)
@@ -168,7 +169,9 @@ function quasi_collapsed_gibbs_parallel!(model, X, labels, clusters, empty_clust
             end
         end
         clusters = CollapsedClusters(model,gather_stats(stats))
+        chain_append!(chain, clusters)
     end
+    record!(scene,labels,T)
 end
 
 #Gathers parallely collected sufficient stats
